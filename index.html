@@ -1,0 +1,1481 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>開心農場：種瓜得瓜？－金融投資素養互動教學系統</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Tone.js for Sound Effects -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+  <!-- Chart.js for Portfolio Breakdown -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            farm: {
+              50: '#f0fdf4',
+              100: '#dcfce7',
+              200: '#bbf7d0',
+              500: '#22c55e',
+              600: '#16a34a',
+              700: '#15803d',
+              800: '#166534',
+              900: '#14532d'
+            },
+            soil: {
+              100: '#f7f3ee',
+              500: '#854d0e',
+              700: '#5c330a'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
+    body {
+      font-family: 'Noto Sans TC', sans-serif;
+      user-select: none;
+    }
+    .card-flip {
+      perspective: 1200px;
+    }
+    .card-inner {
+      transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+      transform-style: preserve-3d;
+    }
+    .card-inner.flipped {
+      transform: rotateY(180deg);
+    }
+    .card-front, .card-back {
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+    }
+    .card-back {
+      transform: rotateY(180deg);
+    }
+    .glow-gold {
+      box-shadow: 0 0 25px rgba(234, 179, 8, 0.45);
+    }
+    .crop-row:hover {
+      background-color: rgba(240, 253, 244, 0.7);
+    }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col justify-between overflow-x-hidden">
+
+  <!-- 頂部控制面板 (大螢幕投屏專用標題與狀態列) -->
+  <header class="bg-slate-800/90 border-b border-slate-700 backdrop-blur sticky top-0 z-40 px-6 py-3 shadow-lg">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center space-x-3">
+        <div class="w-11 h-11 bg-gradient-to-tr from-emerald-500 to-green-300 rounded-xl flex items-center justify-center text-slate-900 font-extrabold text-2xl shadow-md shadow-emerald-500/30">
+          🌱
+        </div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <h1 class="text-xl md:text-2xl font-black tracking-wide text-white">開心農場：種瓜得瓜？</h1>
+            <span class="bg-emerald-500/20 text-emerald-300 text-xs px-2.5 py-0.5 rounded-full font-bold border border-emerald-500/40">金融素養教學投屏版</span>
+          </div>
+          <p class="text-xs text-slate-400">金管會金融基礎教育教材・單元一：理財投資與風險管理</p>
+        </div>
+      </div>
+
+      <!-- 進度指示標籤與控制按鈕 -->
+      <div class="flex items-center space-x-3">
+        <div class="bg-slate-700/80 px-4 py-1.5 rounded-xl border border-slate-600 flex items-center space-x-3 text-sm">
+          <span class="text-slate-400">回合狀態：</span>
+          <span id="currentRoundBadge" class="font-bold text-amber-400 text-base">第一回合 (本金 10 萬)</span>
+        </div>
+
+        <!-- 音效切換 -->
+        <button id="soundToggleBtn" onclick="toggleSound()" class="p-2.5 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-200 transition" title="切換音效">
+          <i id="soundIcon" class="fas fa-volume-up"></i>
+        </button>
+
+        <!-- 全螢幕切換 -->
+        <button onclick="toggleFullScreen()" class="p-2.5 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-200 transition" title="全螢幕切換">
+          <i class="fas fa-expand"></i>
+        </button>
+
+        <!-- 重新遊戲 -->
+        <button onclick="confirmResetGame()" class="px-3.5 py-2 rounded-xl bg-rose-600/80 hover:bg-rose-600 text-white font-medium text-sm transition flex items-center space-x-1.5 shadow">
+          <i class="fas fa-rotate-left"></i>
+          <span>重啟活動</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- 主要遊戲介面容器 -->
+  <main class="max-w-7xl mx-auto px-4 py-6 w-full flex-1 flex flex-col space-y-6">
+
+    <!-- 流程導覽步驟指示條 (Stepper) -->
+    <div class="bg-slate-800/80 p-3 rounded-2xl border border-slate-700 flex justify-between items-center text-xs md:text-sm overflow-x-auto shadow-inner">
+      <div class="step-tab flex items-center space-x-2 px-3 py-1.5 rounded-xl transition cursor-pointer bg-emerald-500 text-slate-950 font-bold" id="stepIndicator1" onclick="switchStage(1)">
+        <span class="w-6 h-6 rounded-full bg-slate-900 text-emerald-400 flex items-center justify-center text-xs">1</span>
+        <span>作物屬性與配置</span>
+      </div>
+      <i class="fas fa-chevron-right text-slate-600 hidden sm:inline"></i>
+      <div class="step-tab flex items-center space-x-2 px-3 py-1.5 rounded-xl transition cursor-pointer text-slate-400 hover:text-slate-200" id="stepIndicator2" onclick="switchStage(2)">
+        <span class="w-6 h-6 rounded-full bg-slate-700 flex items-center justify-center text-xs">2</span>
+        <span>天候情境抽卡</span>
+      </div>
+      <i class="fas fa-chevron-right text-slate-600 hidden sm:inline"></i>
+      <div class="step-tab flex items-center space-x-2 px-3 py-1.5 rounded-xl transition cursor-pointer text-slate-400 hover:text-slate-200" id="stepIndicator3" onclick="switchStage(3)">
+        <span class="w-6 h-6 rounded-full bg-slate-700 flex items-center justify-center text-xs">3</span>
+        <span>收成利潤結算</span>
+      </div>
+      <i class="fas fa-chevron-right text-slate-600 hidden sm:inline"></i>
+      <div class="step-tab flex items-center space-x-2 px-3 py-1.5 rounded-xl transition cursor-pointer text-slate-400 hover:text-slate-200" id="stepIndicator4" onclick="switchStage(4)">
+        <span class="w-6 h-6 rounded-full bg-slate-700 flex items-center justify-center text-xs">4</span>
+        <span>總結排行與 4F 反思</span>
+      </div>
+    </div>
+
+    <!-- 階段一：作物屬性圖鑑與各組投資計畫配置 -->
+    <section id="stage1" class="space-y-6">
+      <!-- 作物屬性與報酬對照折疊看板 -->
+      <div class="bg-slate-800/90 border border-slate-700 rounded-2xl p-5 shadow-xl">
+        <div class="flex flex-wrap items-center justify-between pb-3 border-b border-slate-700 mb-4 gap-2">
+          <div class="flex items-center space-x-2">
+            <span class="text-2xl">🌾</span>
+            <h2 class="text-lg md:text-xl font-bold text-emerald-400">開心農場五大作物：成本與風險獲利表</h2>
+          </div>
+          <span class="text-xs text-slate-400 bg-slate-700/60 px-3 py-1 rounded-full">依據教手冊學習單設計（單位：萬元）</span>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm">
+            <thead class="bg-slate-900/80 text-slate-300 text-xs uppercase font-bold">
+              <tr>
+                <th class="p-3">栽種項目</th>
+                <th class="p-3 text-center">每單位成本</th>
+                <th class="p-3 text-center text-amber-300">大吉(風調雨順)</th>
+                <th class="p-3 text-center text-lime-300">小吉(偶有風災)</th>
+                <th class="p-3 text-center text-sky-300">平(蟲害頻傳)</th>
+                <th class="p-3 text-center text-orange-400">小凶(風災頻傳)</th>
+                <th class="p-3 text-center text-red-400">大凶(百年久旱)</th>
+                <th class="p-3">屬性與風險特徵</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-700/60 text-slate-200">
+              <tr class="crop-row transition">
+                <td class="p-3 font-bold flex items-center space-x-2">
+                  <span class="text-xl">🌱</span>
+                  <div>
+                    <span>豆芽菜</span>
+                    <span class="block text-[11px] text-slate-400 font-normal">保證收益型</span>
+                  </div>
+                </td>
+                <td class="p-3 text-center font-bold text-amber-400">1 萬元</td>
+                <td class="p-3 text-center font-bold">1.1 萬</td>
+                <td class="p-3 text-center font-bold">1.1 萬</td>
+                <td class="p-3 text-center font-bold">1.1 萬</td>
+                <td class="p-3 text-center font-bold">1.1 萬</td>
+                <td class="p-3 text-center font-bold text-emerald-400">1.1 萬</td>
+                <td class="p-3 text-xs text-slate-300">
+                  <span class="text-amber-400">★☆☆☆☆</span> 風險極低，品質固定保證收益。
+                </td>
+              </tr>
+              <tr class="crop-row transition">
+                <td class="p-3 font-bold flex items-center space-x-2">
+                  <span class="text-xl">🍠</span>
+                  <div>
+                    <span>契作地瓜</span>
+                    <span class="block text-[11px] text-slate-400 font-normal">合約保障型</span>
+                  </div>
+                </td>
+                <td class="p-3 text-center font-bold text-amber-400">5 萬元</td>
+                <td class="p-3 text-center font-bold">7 萬</td>
+                <td class="p-3 text-center font-bold">7 萬</td>
+                <td class="p-3 text-center font-bold">7 萬</td>
+                <td class="p-3 text-center font-bold">7 萬</td>
+                <td class="p-3 text-center font-bold text-rose-400">0 萬</td>
+                <td class="p-3 text-xs text-slate-300">
+                  <span class="text-amber-400">★★☆☆☆</span> 固定獲利較有保障，逢百年大旱違約歸零。
+                </td>
+              </tr>
+              <tr class="crop-row transition">
+                <td class="p-3 font-bold flex items-center space-x-2">
+                  <span class="text-xl">🍓</span>
+                  <div>
+                    <span>溫室草莓</span>
+                    <span class="block text-[11px] text-slate-400 font-normal">科技防護型</span>
+                  </div>
+                </td>
+                <td class="p-3 text-center font-bold text-amber-400">2 萬元</td>
+                <td class="p-3 text-center font-bold text-emerald-400">6 萬 (3倍)</td>
+                <td class="p-3 text-center font-bold">4 萬</td>
+                <td class="p-3 text-center font-bold">2 萬</td>
+                <td class="p-3 text-center font-bold">1 萬</td>
+                <td class="p-3 text-center font-bold text-rose-400">0 萬</td>
+                <td class="p-3 text-xs text-slate-300">
+                  <span class="text-amber-400">★★★☆☆</span> 受天然災損較小，品質好可達3倍獲利。
+                </td>
+              </tr>
+              <tr class="crop-row transition">
+                <td class="p-3 font-bold flex items-center space-x-2">
+                  <span class="text-xl">🌾</span>
+                  <div>
+                    <span>契作水稻</span>
+                    <span class="block text-[11px] text-slate-400 font-normal">高報酬契作型</span>
+                  </div>
+                </td>
+                <td class="p-3 text-center font-bold text-amber-400">5 萬元</td>
+                <td class="p-3 text-center font-bold text-emerald-400">9 萬 (1.8倍)</td>
+                <td class="p-3 text-center font-bold">9 萬</td>
+                <td class="p-3 text-center font-bold">9 萬</td>
+                <td class="p-3 text-center font-bold text-rose-400">0 萬</td>
+                <td class="p-3 text-center font-bold text-rose-400">0 萬</td>
+                <td class="p-3 text-xs text-slate-300">
+                  <span class="text-amber-400">★★★★☆</span> 遇小凶、大凶因淹水久旱全數虧損。
+                </td>
+              </tr>
+              <tr class="crop-row transition">
+                <td class="p-3 font-bold flex items-center space-x-2">
+                  <span class="text-xl">🧅</span>
+                  <div>
+                    <span>青蔥</span>
+                    <span class="block text-[11px] text-slate-400 font-normal">極端高風險高報酬</span>
+                  </div>
+                </td>
+                <td class="p-3 text-center font-bold text-amber-400">1 萬元</td>
+                <td class="p-3 text-center font-bold text-emerald-300 font-black">5 萬 (5倍)</td>
+                <td class="p-3 text-center font-bold">3 萬</td>
+                <td class="p-3 text-center font-bold">1 萬</td>
+                <td class="p-3 text-center font-bold text-rose-400">0 萬</td>
+                <td class="p-3 text-center font-bold text-rose-400">0 萬</td>
+                <td class="p-3 text-xs text-slate-300">
+                  <span class="text-amber-400">★★★★★</span> 風險最高，遇風災血本無歸，順風獲利可達5倍。
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 小組數量設置與組別投資卡片區 -->
+      <div class="flex flex-wrap items-center justify-between gap-4">
+        <div class="flex items-center space-x-3">
+          <label class="font-bold text-slate-300">班級小組數：</label>
+          <div class="flex items-center space-x-1 bg-slate-800 p-1 rounded-xl border border-slate-700">
+            <button onclick="changeTeamCount(-1)" class="w-8 h-8 rounded-lg bg-slate-700 hover:bg-slate-600 flex items-center justify-center font-bold">-</button>
+            <span id="teamCountText" class="w-10 text-center font-bold text-emerald-400">6</span>
+            <button onclick="changeTeamCount(1)" class="w-8 h-8 rounded-lg bg-slate-700 hover:bg-slate-600 flex items-center justify-center font-bold">+</button>
+          </div>
+          <span class="text-xs text-slate-400">（點擊加減可調整 2~8 組）</span>
+        </div>
+
+        <div class="flex items-center space-x-3">
+          <button onclick="applyPreset('conservative')" class="text-xs bg-slate-700/80 hover:bg-slate-700 px-3 py-1.5 rounded-lg text-slate-200 border border-slate-600">
+            🛡️ 示範：保守穩定配置
+          </button>
+          <button onclick="applyPreset('aggressive')" class="text-xs bg-slate-700/80 hover:bg-slate-700 px-3 py-1.5 rounded-lg text-slate-200 border border-slate-600">
+            🚀 示範：高風險衝鋒配置
+          </button>
+          <button onclick="applyPreset('balanced')" class="text-xs bg-slate-700/80 hover:bg-slate-700 px-3 py-1.5 rounded-lg text-slate-200 border border-slate-600">
+            ⚖️ 示範：均衡分散配置
+          </button>
+        </div>
+      </div>
+
+      <!-- 小組卡片網格 -->
+      <div id="teamsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <!-- 動態渲染各組卡片 -->
+      </div>
+
+      <!-- 進入抽卡階段的大按鈕 -->
+      <div class="pt-4 flex justify-center">
+        <button onclick="proceedToFateDraw()" class="px-8 py-4 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-lg md:text-xl rounded-2xl shadow-xl shadow-emerald-500/20 transform hover:-translate-y-0.5 transition flex items-center space-x-3">
+          <span>完成各組配置，進入【天候情境抽卡】</span>
+          <i class="fas fa-cloud-sun-rain text-2xl"></i>
+        </button>
+      </div>
+    </section>
+
+    <!-- 階段二：天候情境抽卡劇場 (大螢幕震撼抽卡儀式) -->
+    <section id="stage2" class="hidden space-y-8 py-4">
+      <div class="text-center space-y-2">
+        <h2 class="text-2xl md:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-emerald-300 to-sky-300">
+          🎲 氣候變遷與市場命運：天候情境抽卡
+        </h2>
+        <p class="text-slate-400 max-w-2xl mx-auto text-sm md:text-base">
+          務農必須看天吃飯！請班級代表或由老師點擊下方牌卡，揭曉本回合的大自然考驗！
+        </p>
+      </div>
+
+      <!-- 抽卡卡片展示區 -->
+      <div class="flex justify-center items-center py-6">
+        <div class="w-80 h-96 card-flip cursor-pointer" onclick="flipCard()">
+          <div id="fateCardInner" class="card-inner relative w-full h-full rounded-3xl shadow-2xl">
+            <!-- 卡片背面 (未抽前) -->
+            <div class="card-front absolute inset-0 bg-gradient-to-br from-indigo-900 via-slate-800 to-emerald-950 border-4 border-amber-400/80 rounded-3xl flex flex-col items-center justify-center p-6 text-center shadow-xl">
+              <div class="w-24 h-24 rounded-full bg-amber-400/20 border-2 border-amber-300 flex items-center justify-center mb-6 animate-pulse">
+                <span class="text-5xl">🌾</span>
+              </div>
+              <h3 class="text-2xl font-black text-amber-300 tracking-widest mb-2">天候情境卡</h3>
+              <p class="text-xs text-slate-300 font-medium">種瓜得瓜？看天吃飯！</p>
+              <div class="mt-8 px-5 py-2.5 bg-amber-400 text-slate-950 font-bold rounded-xl text-sm shadow-lg flex items-center space-x-2">
+                <i class="fas fa-hand-pointer"></i>
+                <span>點擊翻開命運牌卡</span>
+              </div>
+            </div>
+
+            <!-- 卡片正面 (翻開後) -->
+            <div id="fateCardBack" class="card-back absolute inset-0 rounded-3xl flex flex-col items-center justify-between p-7 text-center border-4">
+              <!-- 動態置換內容 -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 控制抽籤模式切換與特定情境選擇 (教師輔助工具) -->
+      <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-4 max-w-2xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-sm">
+        <div class="text-slate-300 flex items-center space-x-2">
+          <i class="fas fa-chalkboard-teacher text-emerald-400"></i>
+          <span class="font-bold">教師指定情境（可教學示範）：</span>
+        </div>
+        <div class="flex flex-wrap gap-1.5 justify-center">
+          <button onclick="forceScenario('great')" class="px-2.5 py-1 text-xs rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/40">大吉</button>
+          <button onclick="forceScenario('good')" class="px-2.5 py-1 text-xs rounded-lg bg-lime-500/20 text-lime-300 border border-lime-500/40 hover:bg-lime-500/40">小吉</button>
+          <button onclick="forceScenario('normal')" class="px-2.5 py-1 text-xs rounded-lg bg-sky-500/20 text-sky-300 border border-sky-500/40 hover:bg-sky-500/40">平</button>
+          <button onclick="forceScenario('bad')" class="px-2.5 py-1 text-xs rounded-lg bg-orange-500/20 text-orange-300 border border-orange-500/40 hover:bg-orange-500/40">小凶</button>
+          <button onclick="forceScenario('disaster')" class="px-2.5 py-1 text-xs rounded-lg bg-red-500/20 text-red-300 border border-red-500/40 hover:bg-red-500/40">大凶</button>
+        </div>
+      </div>
+
+      <!-- 前往結算按鈕 -->
+      <div class="flex justify-center pt-2">
+        <button id="goToSettleBtn" onclick="proceedToSettlement()" disabled class="opacity-50 cursor-not-allowed px-8 py-4 bg-gradient-to-r from-emerald-500 to-green-400 text-slate-950 font-black text-xl rounded-2xl shadow-xl transition flex items-center space-x-2">
+          <span>揭曉收成！查看各組利潤結算</span>
+          <i class="fas fa-arrow-right"></i>
+        </button>
+      </div>
+    </section>
+
+    <!-- 階段三：收成利潤結算看板 -->
+    <section id="stage3" class="hidden space-y-6">
+      <div class="flex flex-wrap items-center justify-between gap-4 bg-slate-800/90 p-5 rounded-2xl border border-slate-700 shadow-xl">
+        <div class="flex items-center space-x-3">
+          <div id="settleWeatherIcon" class="text-4xl">🌤️</div>
+          <div>
+            <div class="flex items-center space-x-2">
+              <span class="text-xs uppercase tracking-wider text-slate-400">當前情境</span>
+              <span id="settleWeatherTitle" class="text-xl md:text-2xl font-black text-amber-400">大吉：風調雨順</span>
+            </div>
+            <p id="settleWeatherDesc" class="text-xs text-slate-300">天候絕佳、市場暢旺，各項作物全面豐收！</p>
+          </div>
+        </div>
+        <div class="text-right">
+          <span class="text-xs text-slate-400 block">回合結算</span>
+          <span id="settleRoundLabel" class="text-lg font-bold text-emerald-400">第一回合結清</span>
+        </div>
+      </div>
+
+      <!-- 各組收益結算清單 -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-5" id="settlementCardsGrid">
+        <!-- 動態渲染結算卡 -->
+      </div>
+
+      <!-- 換回合或總結決策按鈕列 -->
+      <div class="flex flex-wrap justify-center gap-4 pt-4">
+        <button onclick="switchStage(1)" class="px-5 py-3 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm font-bold transition flex items-center space-x-2">
+          <i class="fas fa-pen"></i>
+          <span>回上一步檢視配置</span>
+        </button>
+
+        <button id="nextRoundBtn" onclick="prepareRoundTwo()" class="px-8 py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black text-base shadow-lg transition flex items-center space-x-2">
+          <span>進入第二回合（將收穫全數再投資）</span>
+          <i class="fas fa-forward"></i>
+        </button>
+
+        <button id="finalDebriefBtn" onclick="showFinalDebrief()" class="hidden px-8 py-3.5 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-400 hover:to-purple-400 text-white font-black text-base shadow-lg transition flex items-center space-x-2">
+          <span>查看最終冠軍與 4F 深度討論</span>
+          <i class="fas fa-trophy"></i>
+        </button>
+      </div>
+    </section>
+
+    <!-- 階段四：全班排行榜與 4F 反思拼圖法 -->
+    <section id="stage4" class="hidden space-y-8">
+      <!-- 英雄榜頒獎台 -->
+      <div class="bg-gradient-to-b from-slate-800 to-slate-900 border border-slate-700 rounded-3xl p-6 shadow-2xl">
+        <div class="text-center max-w-xl mx-auto mb-8 space-y-1">
+          <span class="text-4xl">🏆</span>
+          <h2 class="text-2xl md:text-3xl font-black text-white">兩回合投資總收益頒獎典禮</h2>
+          <p class="text-xs text-slate-400">比較保守與積極型投資人的最終命運</p>
+        </div>
+
+        <div id="podiumContainer" class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end max-w-4xl mx-auto mb-8">
+          <!-- 前三名頒獎動態渲染 -->
+        </div>
+
+        <!-- 全班總成績表 -->
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm">
+            <thead class="bg-slate-950/70 text-slate-400 text-xs">
+              <tr>
+                <th class="p-3 text-center">排名</th>
+                <th class="p-3">組別名稱</th>
+                <th class="p-3 text-right">第一回合收穫</th>
+                <th class="p-3 text-right">第二回合收穫</th>
+                <th class="p-3 text-right">總累積資本</th>
+                <th class="p-3 text-center">投資風格標籤</th>
+              </tr>
+            </thead>
+            <tbody id="finalRankingTableBody" class="divide-y divide-slate-800 text-slate-200">
+              <!-- 動態生成 -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 4F 反思拼圖法教學討論看板 (依據教師手冊 Page 3-4 設計) -->
+      <div class="bg-slate-800/90 border border-slate-700 rounded-3xl p-6 shadow-xl space-y-6">
+        <div class="flex items-center space-x-3 border-b border-slate-700 pb-4">
+          <span class="text-3xl">🧩</span>
+          <div>
+            <h3 class="text-xl font-black text-amber-300">理財投資教學總結：4F 反思拼圖討論</h3>
+            <p class="text-xs text-slate-400">請老師引導各組分享並發表在學習單上的心得與收穫</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <!-- 1. Facts 事實 -->
+          <div class="bg-slate-900/80 border border-blue-500/40 rounded-2xl p-4 space-y-3">
+            <div class="flex items-center space-x-2 text-blue-400 font-black">
+              <span class="text-xl">🟦</span>
+              <h4>1. 事實 (Facts)</h4>
+            </div>
+            <p class="text-xs text-slate-300 leading-relaxed">
+              觀察客觀發生的數據與經驗：
+            </p>
+            <ul class="text-xs text-slate-400 space-y-2 list-disc list-inside">
+              <li>哪一組在第一回合賺最多？哪一組在第二回合賠光？</li>
+              <li>抽到了什麼天候牌卡？對不同作物的打擊有多大？</li>
+              <li>你們兩回合的投資組合是否相同？為什麼？</li>
+            </ul>
+          </div>
+
+          <!-- 2. Feelings 感受 -->
+          <div class="bg-slate-900/80 border border-rose-500/40 rounded-2xl p-4 space-y-3">
+            <div class="flex items-center space-x-2 text-rose-400 font-black">
+              <span class="text-xl">❤️</span>
+              <h4>2. 感受 (Feelings)</h4>
+            </div>
+            <p class="text-xs text-slate-300 leading-relaxed">
+              察覺決策與面臨損益時的內心情緒：
+            </p>
+            <ul class="text-xs text-slate-400 space-y-2 list-disc list-inside">
+              <li>當翻牌是「百年久旱」時，組員的心情如何？</li>
+              <li>看到別組青蔥大賺5倍時，心中會不會後悔沒多押？</li>
+              <li>當手中的血汗錢瞬間歸零時，體會到了什麼壓力？</li>
+            </ul>
+          </div>
+
+          <!-- 3. Findings 發現 -->
+          <div class="bg-slate-900/80 border border-emerald-500/40 rounded-2xl p-4 space-y-3">
+            <div class="flex items-center space-x-2 text-emerald-400 font-black">
+              <span class="text-xl">♠️</span>
+              <h4>3. 發現 (Findings)</h4>
+            </div>
+            <p class="text-xs text-slate-300 leading-relaxed">
+              內心鏟子深度挖掘原因與投資本質：
+            </p>
+            <ul class="text-xs text-slate-400 space-y-2 list-disc list-inside">
+              <li>為什麼說「種瓜不一定能得瓜」？</li>
+              <li>積極型（全押青蔥水稻）與保守型（豆芽菜）的本質差異是什麼？</li>
+              <li>什麼是「資產配置與分散風險」？如何不把雞蛋放在同個籃子裡？</li>
+            </ul>
+          </div>
+
+          <!-- 4. Future 將來 -->
+          <div class="bg-slate-900/80 border border-amber-500/40 rounded-2xl p-4 space-y-3">
+            <div class="flex items-center space-x-2 text-amber-400 font-black">
+              <span class="text-xl">♣️</span>
+              <h4>4. 將來 (Future)</h4>
+            </div>
+            <p class="text-xs text-slate-300 leading-relaxed">
+              將理財智慧應用在未來真實生活：
+            </p>
+            <ul class="text-xs text-slate-400 space-y-2 list-disc list-inside">
+              <li>未來在生活中投資時，能拿「生活費」或「借錢」來投資嗎？（嚴禁！）</li>
+              <li>零風險卻保證高獲利的投資，通常是什麼？（防範詐騙觀念）</li>
+              <li>如何在接下來的「園遊會開店趣」運用今日的成本與分散風險概念？</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- 教師總結小卡 -->
+        <div class="bg-emerald-950/40 border border-emerald-500/30 rounded-2xl p-5 flex items-start space-x-4">
+          <div class="text-3xl text-emerald-400">💡</div>
+          <div class="space-y-1 text-sm text-slate-300">
+            <h4 class="font-bold text-emerald-300">教師手冊總結核心指引：</h4>
+            <p class="leading-relaxed">
+              投資就像面對天候變數，永遠有不可預測的意外與波動。積極型投資人追求超額回報卻必須承受血本無歸的代價；保守型投資人收入穩定但成長有限。<strong>學會分散投資風險、做好停損停利、切勿拿維持基本生活的金錢去投機</strong>，才是每位國中生一生受用的理財素養！
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- 頁腳 -->
+  <footer class="bg-slate-950 border-t border-slate-800 text-center py-4 px-4 text-xs text-slate-500">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+      <div>指導發行單位：金融監督管理委員會 ｜ 執行單位：台灣公益團體自律聯盟</div>
+      <div>國中金融基礎教育教材《理財投資》單元一・全班投屏互動學習系統</div>
+    </div>
+  </footer>
+
+  <!-- 自定義提醒彈窗 (替代瀏覽器原生 alert) -->
+  <div id="customModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-800 border border-slate-700 rounded-3xl max-w-md w-full p-6 text-center space-y-4 shadow-2xl">
+      <div id="modalIcon" class="w-14 h-14 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto text-2xl">
+        <i class="fas fa-info-circle"></i>
+      </div>
+      <h3 id="modalTitle" class="text-xl font-bold text-white">通知</h3>
+      <p id="modalMessage" class="text-slate-300 text-sm leading-relaxed">訊息內容</p>
+      <div class="pt-2">
+        <button onclick="closeModal()" class="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold transition">
+          明白
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* =========================================================
+     *  遊戲核心資料結構與常數設定 (依據教案手冊 Page 3-7)
+     * ========================================================= */
+    const CROPS = {
+      beanSprouts: {
+        id: 'beanSprouts',
+        name: '豆芽菜',
+        icon: '🌱',
+        unitCost: 1, // 萬元
+        returns: {
+          great: 1.1,
+          good: 1.1,
+          normal: 1.1,
+          bad: 1.1,
+          disaster: 1.1
+        },
+        riskLevel: '★☆☆☆☆',
+        desc: '固定獲利，保證收益'
+      },
+      sweetPotato: {
+        id: 'sweetPotato',
+        name: '契作地瓜',
+        icon: '🍠',
+        unitCost: 5,
+        returns: {
+          great: 7,
+          good: 7,
+          normal: 7,
+          bad: 7,
+          disaster: 0
+        },
+        riskLevel: '★★☆☆☆',
+        desc: '若如期交貨固定7萬，大旱違約0元'
+      },
+      strawberry: {
+        id: 'strawberry',
+        name: '溫室草莓',
+        icon: '🍓',
+        unitCost: 2,
+        returns: {
+          great: 6,
+          good: 4,
+          normal: 2,
+          bad: 1,
+          disaster: 0
+        },
+        riskLevel: '★★★☆☆',
+        desc: '受天然災損小，高品質獲利最多3倍'
+      },
+      rice: {
+        id: 'rice',
+        name: '契作水稻',
+        icon: '🌾',
+        unitCost: 5,
+        returns: {
+          great: 9,
+          good: 9,
+          normal: 9,
+          bad: 0,
+          disaster: 0
+        },
+        riskLevel: '★★★★☆',
+        desc: '約定9萬高報酬，逢風災大旱全數虧損'
+      },
+      scallion: {
+        id: 'scallion',
+        name: '青蔥',
+        icon: '🧅',
+        unitCost: 1,
+        returns: {
+          great: 5,
+          good: 3,
+          normal: 1,
+          bad: 0,
+          disaster: 0
+        },
+        riskLevel: '★★★★★',
+        desc: '極端高風險，順風暴賺5倍，天災歸零'
+      }
+    };
+
+    const SCENARIOS = {
+      great: {
+        id: 'great',
+        name: '大吉：風調雨順',
+        icon: '☀️',
+        bgGradient: 'from-amber-600 via-yellow-600 to-amber-700',
+        borderColor: 'border-amber-400',
+        summary: '天公作美！陽光充沛雨水適中，市場採購買氣大爆發，所有農作物產銷兩旺！'
+      },
+      good: {
+        id: 'good',
+        name: '小吉：偶有風災',
+        icon: '⛅',
+        bgGradient: 'from-lime-600 via-emerald-600 to-teal-700',
+        borderColor: 'border-lime-400',
+        summary: '偶有陣風微雨，整體氣候尚稱穩定，高價值青蔥稍微受損但仍大幅獲利！'
+      },
+      normal: {
+        id: 'normal',
+        name: '平：蟲害頻傳',
+        icon: '🐛',
+        bgGradient: 'from-sky-700 via-slate-700 to-blue-800',
+        borderColor: 'border-sky-400',
+        summary: '氣候普通，但蟲害零星爆發，需耗費心力照料，青蔥與草莓僅能保本！'
+      },
+      bad: {
+        id: 'bad',
+        name: '小凶：風災頻傳',
+        icon: '⛈️',
+        bgGradient: 'from-orange-700 via-amber-800 to-red-900',
+        borderColor: 'border-orange-500',
+        summary: '強烈颱風豪雨接連登陸！水稻田遭淹沒、青蔥倒伏全損！唯有溫室與抗災契作勉強支撐！'
+      },
+      disaster: {
+        id: 'disaster',
+        name: '大凶：百年久旱',
+        icon: '🏜️',
+        bgGradient: 'from-red-900 via-stone-900 to-red-950',
+        borderColor: 'border-red-600',
+        summary: '遭遇百年罕見乾旱！農田全數乾涸休耕，合約紛紛違約！唯有室內培育的豆芽菜依然保本產出！'
+      }
+    };
+
+    // 遊戲全域狀態
+    let gameState = {
+      round: 1, // 1 或 2
+      teamCount: 6,
+      currentScenario: null,
+      cardFlipped: false,
+      soundEnabled: true,
+      teams: []
+    };
+
+    let charts = {}; // 存放 Chart.js 實例
+
+    /* =========================================================
+     *  Tone.js 免外連音效系統
+     * ========================================================= */
+    let synth, chimeSynth, noiseSynth;
+
+    function initAudio() {
+      if (!synth && window.Tone) {
+        try {
+          synth = new Tone.PolySynth(Tone.Synth).toDestination();
+          synth.volume.value = -6;
+
+          chimeSynth = new Tone.MembraneSynth().toDestination();
+          chimeSynth.volume.value = -4;
+
+          noiseSynth = new Tone.NoiseSynth().toDestination();
+          noiseSynth.volume.value = -12;
+        } catch (e) {
+          console.log("Audio Context requires user interaction");
+        }
+      }
+    }
+
+    function playSound(type) {
+      if (!gameState.soundEnabled || !window.Tone) return;
+      initAudio();
+      try {
+        if (Tone.context.state !== 'running') {
+          Tone.start();
+        }
+        const now = Tone.now();
+        if (type === 'click') {
+          synth.triggerAttackRelease('C5', '16n', now);
+        } else if (type === 'coin') {
+          synth.triggerAttackRelease(['E5', 'G5', 'C6'], '16n', now);
+        } else if (type === 'fanfare') {
+          synth.triggerAttackRelease(['C4', 'G4', 'C5', 'E5'], '8n', now);
+          setTimeout(() => synth.triggerAttackRelease(['G4', 'C5', 'E5', 'G5'], '4n'), 200);
+        } else if (type === 'thunder') {
+          chimeSynth.triggerAttackRelease('C2', '4n', now);
+          noiseSynth.triggerAttackRelease('8n', now);
+        } else if (type === 'flip') {
+          synth.triggerAttackRelease(['D5', 'A5'], '16n', now);
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function toggleSound() {
+      gameState.soundEnabled = !gameState.soundEnabled;
+      const icon = document.getElementById('soundIcon');
+      if (gameState.soundEnabled) {
+        icon.className = 'fas fa-volume-up';
+        showToast('音效已開啟');
+      } else {
+        icon.className = 'fas fa-volume-mute';
+        showToast('音效已靜音');
+      }
+    }
+
+    /* =========================================================
+     *  小組初始化與狀態配置
+     * ========================================================= */
+    function initializeTeams(count = 6) {
+      gameState.teams = [];
+      for (let i = 1; i <= count; i++) {
+        gameState.teams.push({
+          id: i,
+          name: `第 ${i} 組`,
+          initialCapital: 10, // 萬元
+          round1Investments: {
+            beanSprouts: 0,
+            sweetPotato: 0,
+            strawberry: 0,
+            rice: 0,
+            scallion: 0
+          },
+          round1Harvest: 0,
+          round2Capital: 10,
+          round2Investments: {
+            beanSprouts: 0,
+            sweetPotato: 0,
+            strawberry: 0,
+            rice: 0,
+            scallion: 0
+          },
+          round2Harvest: 0,
+          totalScore: 0
+        });
+      }
+      renderTeams();
+    }
+
+    function changeTeamCount(delta) {
+      const newCount = gameState.teamCount + delta;
+      if (newCount < 2 || newCount > 8) {
+        showModal('提醒', '小組數量建議設定在 2 到 8 組之間，以獲得最佳投屏視覺體驗。');
+        return;
+      }
+      gameState.teamCount = newCount;
+      document.getElementById('teamCountText').innerText = newCount;
+      initializeTeams(newCount);
+      playSound('click');
+    }
+
+    /* =========================================================
+     *  渲染第一回合 / 第二回合 小組投資配置介面
+     * ========================================================= */
+    function renderTeams() {
+      const container = document.getElementById('teamsContainer');
+      container.innerHTML = '';
+
+      const currentCapitalField = gameState.round === 1 ? 'initialCapital' : 'round2Capital';
+      const currentInvestField = gameState.round === 1 ? 'round1Investments' : 'round2Investments';
+
+      gameState.teams.forEach(team => {
+        const totalBudget = team[currentCapitalField];
+        const currentInvest = team[currentInvestField];
+        
+        // 計算已使用預算
+        let used = 0;
+        Object.keys(currentInvest).forEach(cropKey => {
+          used += currentInvest[cropKey] * CROPS[cropKey].unitCost;
+        });
+        const remaining = totalBudget - used;
+
+        const card = document.createElement('div');
+        card.className = "bg-slate-800 border border-slate-700 rounded-2xl p-4 shadow-lg flex flex-col justify-between hover:border-slate-600 transition";
+        card.id = `teamCard_${team.id}`;
+
+        let cropsControlHtml = '';
+        Object.keys(CROPS).forEach(cropKey => {
+          const crop = CROPS[cropKey];
+          const qty = currentInvest[cropKey];
+          cropsControlHtml += `
+            <div class="flex items-center justify-between py-1.5 px-2 rounded-xl bg-slate-900/60 border border-slate-700/50 text-xs">
+              <div class="flex items-center space-x-1.5">
+                <span class="text-base">${crop.icon}</span>
+                <span class="font-bold text-slate-200">${crop.name}</span>
+                <span class="text-slate-500">(${crop.unitCost}萬/單)</span>
+              </div>
+              <div class="flex items-center space-x-1.5">
+                <button onclick="updateCropQty(${team.id}, '${cropKey}', -1)" class="w-6 h-6 rounded bg-slate-700 hover:bg-slate-600 font-bold text-slate-200 flex items-center justify-center transition">-</button>
+                <span class="w-5 text-center font-bold text-amber-300" id="qty_${team.id}_${cropKey}">${qty}</span>
+                <button onclick="updateCropQty(${team.id}, '${cropKey}', 1)" class="w-6 h-6 rounded bg-slate-700 hover:bg-slate-600 font-bold text-slate-200 flex items-center justify-center transition">+</button>
+              </div>
+            </div>
+          `;
+        });
+
+        card.innerHTML = `
+          <div>
+            <div class="flex items-center justify-between pb-2 border-b border-slate-700 mb-3">
+              <div class="flex items-center space-x-2">
+                <input type="text" value="${team.name}" onchange="renameTeam(${team.id}, this.value)" class="bg-transparent font-black text-base text-white border-b border-transparent hover:border-slate-500 focus:border-emerald-400 focus:outline-none w-24">
+                <span class="text-[10px] bg-slate-700 text-slate-300 px-1.5 py-0.5 rounded">點擊可改名</span>
+              </div>
+              <div class="text-right">
+                <span class="text-[11px] text-slate-400 block">可用本金</span>
+                <span class="font-black text-amber-400 text-base">${totalBudget.toFixed(1)} 萬元</span>
+              </div>
+            </div>
+
+            <!-- 作物調整列表 -->
+            <div class="space-y-1.5 mb-3">
+              ${cropsControlHtml}
+            </div>
+          </div>
+
+          <!-- 圓餅圖與預算結算指示條 -->
+          <div class="pt-2 border-t border-slate-700/70">
+            <div class="flex items-center justify-between text-xs mb-2">
+              <span class="text-slate-400">剩餘未投本金：</span>
+              <span id="remain_${team.id}" class="font-black ${remaining === 0 ? 'text-emerald-400' : (remaining < 0 ? 'text-rose-400' : 'text-amber-400')}">
+                ${remaining.toFixed(1)} 萬元
+              </span>
+            </div>
+
+            <!-- 資產配置視覺化比例條 -->
+            <div class="w-full bg-slate-900 h-2.5 rounded-full overflow-hidden flex border border-slate-700 mb-2" id="bar_${team.id}">
+              <!-- 動態塞入色條 -->
+            </div>
+
+            <div class="text-center">
+              <button onclick="openPieChartModal(${team.id})" class="text-[11px] text-slate-400 hover:text-emerald-300 transition flex items-center justify-center space-x-1 mx-auto">
+                <i class="fas fa-chart-pie"></i>
+                <span>查看本組圓餅圖比例（對應學習單）</span>
+              </button>
+            </div>
+          </div>
+        `;
+
+        container.appendChild(card);
+        updateTeamBar(team.id);
+      });
+    }
+
+    /* =========================================================
+     *  作物增減邏輯與即時防呆驗證
+     * ========================================================= */
+    function updateCropQty(teamId, cropKey, delta) {
+      const team = gameState.teams.find(t => t.id === teamId);
+      if (!team) return;
+
+      const currentCapitalField = gameState.round === 1 ? 'initialCapital' : 'round2Capital';
+      const currentInvestField = gameState.round === 1 ? 'round1Investments' : 'round2Investments';
+      const currentInvest = team[currentInvestField];
+
+      const currentQty = currentInvest[cropKey];
+      const newQty = currentQty + delta;
+      if (newQty < 0) return; // 不能小於 0
+
+      // 計算若變更後的總花費
+      let tempTotal = 0;
+      Object.keys(currentInvest).forEach(k => {
+        const q = (k === cropKey) ? newQty : currentInvest[k];
+        tempTotal += q * CROPS[k].unitCost;
+      });
+
+      const maxBudget = team[currentCapitalField];
+      if (tempTotal > maxBudget) {
+        playSound('click');
+        showModal('資金超出上限', `${team.name} 的可用本金為 ${maxBudget.toFixed(1)} 萬元，目前配置已超過預算！請先減少其他作物或精確調整。`);
+        return;
+      }
+
+      currentInvest[cropKey] = newQty;
+      document.getElementById(`qty_${teamId}_${cropKey}`).innerText = newQty;
+
+      // 更新剩餘顯示
+      const remaining = maxBudget - tempTotal;
+      const remainElem = document.getElementById(`remain_${teamId}`);
+      remainElem.innerText = `${remaining.toFixed(1)} 萬元`;
+      remainElem.className = `font-black ${remaining === 0 ? 'text-emerald-400' : 'text-amber-400'}`;
+
+      updateTeamBar(teamId);
+      playSound('coin');
+    }
+
+    function updateTeamBar(teamId) {
+      const team = gameState.teams.find(t => t.id === teamId);
+      if (!team) return;
+
+      const currentCapitalField = gameState.round === 1 ? 'initialCapital' : 'round2Capital';
+      const currentInvestField = gameState.round === 1 ? 'round1Investments' : 'round2Investments';
+      const currentInvest = team[currentInvestField];
+      const maxBudget = team[currentCapitalField];
+
+      const barContainer = document.getElementById(`bar_${teamId}`);
+      if (!barContainer) return;
+      barContainer.innerHTML = '';
+
+      const colors = {
+        beanSprouts: 'bg-emerald-500',
+        sweetPotato: 'bg-amber-600',
+        strawberry: 'bg-pink-500',
+        rice: 'bg-yellow-400',
+        scallion: 'bg-lime-400'
+      };
+
+      Object.keys(currentInvest).forEach(cropKey => {
+        const qty = currentInvest[cropKey];
+        if (qty > 0) {
+          const cost = qty * CROPS[cropKey].unitCost;
+          const pct = (cost / maxBudget) * 100;
+          const segment = document.createElement('div');
+          segment.className = `${colors[cropKey]} h-full transition-all duration-300`;
+          segment.style.width = `${pct}%`;
+          segment.title = `${CROPS[cropKey].name}: ${cost}萬 (${pct.toFixed(0)}%)`;
+          barContainer.appendChild(segment);
+        }
+      });
+    }
+
+    function renameTeam(teamId, newName) {
+      const team = gameState.teams.find(t => t.id === teamId);
+      if (team && newName.trim()) {
+        team.name = newName.trim();
+        playSound('click');
+      }
+    }
+
+    // 教學範例快速套用策略
+    function applyPreset(type) {
+      const currentInvestField = gameState.round === 1 ? 'round1Investments' : 'round2Investments';
+
+      gameState.teams.forEach((team, idx) => {
+        if (type === 'conservative') {
+          // 保守型：豆芽菜多 + 契作地瓜
+          team[currentInvestField] = { beanSprouts: 5, sweetPotato: 1, strawberry: 0, rice: 0, scallion: 0 };
+        } else if (type === 'aggressive') {
+          // 冒險型：重押青蔥 + 水稻
+          team[currentInvestField] = { beanSprouts: 0, sweetPotato: 0, strawberry: 0, rice: 1, scallion: 5 };
+        } else if (type === 'balanced') {
+          // 均衡分散型 (參考手冊範例：青蔥3萬、草莓2萬、水稻5萬)
+          team[currentInvestField] = { beanSprouts: 0, sweetPotato: 0, strawberry: 1, rice: 1, scallion: 3 };
+        }
+      });
+      renderTeams();
+      playSound('fanfare');
+      showModal('示範配置已套用', `全班各組已填入「${type === 'conservative' ? '保守型' : (type === 'aggressive' ? '高風險衝鋒型' : '均衡分散型')}」投資組合，方便老師迅速示範！`);
+    }
+
+    /* =========================================================
+     *  階段二：抽牌與翻卡動畫
+     * ========================================================= */
+    function proceedToFateDraw() {
+      // 檢查是否所有小組都已配置資金
+      const currentCapitalField = gameState.round === 1 ? 'initialCapital' : 'round2Capital';
+      const currentInvestField = gameState.round === 1 ? 'round1Investments' : 'round2Investments';
+
+      let unallocatedTeams = [];
+      gameState.teams.forEach(t => {
+        let totalCost = 0;
+        Object.keys(t[currentInvestField]).forEach(k => {
+          totalCost += t[currentInvestField][k] * CROPS[k].unitCost;
+        });
+        if (totalCost === 0) {
+          unallocatedTeams.push(t.name);
+        }
+      });
+
+      if (unallocatedTeams.length > 0) {
+        showModal('配置尚未完成', `以下小組尚未栽種任何作物：${unallocatedTeams.join('、')}。請各組商討配置後再啟動天候抽卡！`);
+        return;
+      }
+
+      // 重設抽卡狀態
+      gameState.cardFlipped = false;
+      gameState.currentScenario = null;
+      document.getElementById('fateCardInner').classList.remove('flipped');
+      document.getElementById('goToSettleBtn').disabled = true;
+      document.getElementById('goToSettleBtn').classList.add('opacity-50', 'cursor-not-allowed');
+
+      switchStage(2);
+      playSound('fanfare');
+    }
+
+    function flipCard() {
+      if (gameState.cardFlipped) return;
+
+      // 隨機抽籤天候
+      const scenarioKeys = Object.keys(SCENARIOS);
+      const chosenKey = scenarioKeys[Math.floor(Math.random() * scenarioKeys.length)];
+      setScenario(chosenKey);
+    }
+
+    function forceScenario(scenarioKey) {
+      setScenario(scenarioKey);
+    }
+
+    function setScenario(scenarioKey) {
+      gameState.currentScenario = SCENARIOS[scenarioKey];
+      const sc = gameState.currentScenario;
+
+      const cardBack = document.getElementById('fateCardBack');
+      cardBack.className = `card-back absolute inset-0 bg-gradient-to-br ${sc.bgGradient} ${sc.borderColor} rounded-3xl flex flex-col items-center justify-between p-6 text-center border-4 shadow-2xl`;
+
+      cardBack.innerHTML = `
+        <div class="space-y-1">
+          <span class="text-xs uppercase tracking-widest text-slate-300 font-bold">天候情境揭曉</span>
+          <h3 class="text-2xl md:text-3xl font-black text-white drop-shadow">${sc.name}</h3>
+        </div>
+
+        <div class="w-28 h-28 rounded-full bg-slate-900/40 border-2 border-white/30 flex items-center justify-center my-3 text-6xl shadow-inner">
+          ${sc.icon}
+        </div>
+
+        <div class="bg-slate-950/50 p-4 rounded-2xl border border-white/20 text-xs text-slate-100 leading-relaxed shadow">
+          ${sc.summary}
+        </div>
+
+        <div class="text-[11px] text-amber-300 font-bold flex items-center space-x-1">
+          <i class="fas fa-check-circle"></i>
+          <span>已鎖定本回合氣候結果</span>
+        </div>
+      `;
+
+      const cardInner = document.getElementById('fateCardInner');
+      cardInner.classList.add('flipped');
+      gameState.cardFlipped = true;
+
+      // 音效反饋
+      if (scenarioKey === 'disaster' || scenarioKey === 'bad') {
+        playSound('thunder');
+      } else {
+        playSound('fanfare');
+      }
+
+      // 開啟下一步按鈕
+      const settleBtn = document.getElementById('goToSettleBtn');
+      settleBtn.disabled = false;
+      settleBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+    }
+
+    /* =========================================================
+     *  階段三：利潤與收益計算引擎 (精確吻合教案 Page 4 & 5)
+     * ========================================================= */
+    function proceedToSettlement() {
+      if (!gameState.currentScenario) return;
+
+      const sc = gameState.currentScenario;
+      document.getElementById('settleWeatherTitle').innerText = sc.name;
+      document.getElementById('settleWeatherIcon').innerText = sc.icon;
+      document.getElementById('settleWeatherDesc').innerText = sc.summary;
+      document.getElementById('settleRoundLabel').innerText = `第 ${gameState.round} 回合結算`;
+
+      const grid = document.getElementById('settlementCardsGrid');
+      grid.innerHTML = '';
+
+      const currentInvestField = gameState.round === 1 ? 'round1Investments' : 'round2Investments';
+      const currentCapitalField = gameState.round === 1 ? 'initialCapital' : 'round2Capital';
+      const harvestField = gameState.round === 1 ? 'round1Harvest' : 'round2Harvest';
+
+      gameState.teams.forEach(team => {
+        const invest = team[currentInvestField];
+        let totalCost = 0;
+        let totalRevenue = 0;
+
+        let rowDetailsHtml = '';
+
+        Object.keys(CROPS).forEach(cropKey => {
+          const crop = CROPS[cropKey];
+          const qty = invest[cropKey];
+          if (qty > 0) {
+            const cost = qty * crop.unitCost;
+            const unitYield = crop.returns[sc.id];
+            const yieldTotal = qty * unitYield;
+            totalCost += cost;
+            totalRevenue += yieldTotal;
+
+            const isProfit = yieldTotal >= cost;
+
+            rowDetailsHtml += `
+              <tr class="text-xs border-b border-slate-700/40">
+                <td class="py-2 px-1 font-bold flex items-center space-x-1">
+                  <span>${crop.icon}</span>
+                  <span>${crop.name}</span>
+                </td>
+                <td class="text-center">${qty} 單位</td>
+                <td class="text-center">${cost.toFixed(1)} 萬</td>
+                <td class="text-center font-bold ${unitYield === 0 ? 'text-rose-400' : 'text-slate-200'}">
+                  ${unitYield} 萬
+                </td>
+                <td class="text-right font-black ${isProfit ? 'text-emerald-400' : 'text-rose-400'}">
+                  ${yieldTotal.toFixed(1)} 萬元
+                </td>
+              </tr>
+            `;
+          }
+        });
+
+        // 加上未投資保留的現金
+        const remainingCash = team[currentCapitalField] - totalCost;
+        totalRevenue += remainingCash;
+
+        team[harvestField] = totalRevenue;
+
+        // 計算淨利
+        const netProfit = totalRevenue - team[currentCapitalField];
+        const profitRate = ((netProfit / team[currentCapitalField]) * 100).toFixed(1);
+
+        const card = document.createElement('div');
+        card.className = "bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-lg flex flex-col justify-between";
+        card.innerHTML = `
+          <div>
+            <div class="flex items-center justify-between pb-3 border-b border-slate-700 mb-3">
+              <div class="flex items-center space-x-2">
+                <span class="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-300 flex items-center justify-center font-bold text-sm">
+                  ${team.id}
+                </span>
+                <h3 class="text-lg font-black text-white">${team.name}</h3>
+              </div>
+              <div class="text-right">
+                <span class="text-[10px] text-slate-400 block">期初本金</span>
+                <span class="font-bold text-slate-300 text-sm">${team[currentCapitalField].toFixed(1)} 萬元</span>
+              </div>
+            </div>
+
+            <!-- 收成明細表 -->
+            <div class="overflow-x-auto mb-3">
+              <table class="w-full text-left">
+                <thead>
+                  <tr class="text-[11px] text-slate-400 border-b border-slate-700">
+                    <th class="pb-1.5">作物</th>
+                    <th class="pb-1.5 text-center">數量</th>
+                    <th class="pb-1.5 text-center">本金</th>
+                    <th class="pb-1.5 text-center">單株產出</th>
+                    <th class="pb-1.5 text-right">收穫小計</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${rowDetailsHtml}
+                  ${remainingCash > 0 ? `
+                    <tr class="text-xs text-slate-400 italic">
+                      <td class="py-1">💰 未投保留現金</td>
+                      <td class="text-center">-</td>
+                      <td class="text-center">${remainingCash.toFixed(1)} 萬</td>
+                      <td class="text-center">1.0 萬</td>
+                      <td class="text-right text-slate-300 font-bold">${remainingCash.toFixed(1)} 萬元</td>
+                    </tr>
+                  ` : ''}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- 結算成績標記 -->
+          <div class="pt-3 border-t border-slate-700 bg-slate-900/50 -mx-5 -mb-5 p-4 rounded-b-2xl flex items-center justify-between">
+            <div>
+              <span class="text-xs text-slate-400">本回合收穫總計：</span>
+              <div class="text-xl md:text-2xl font-black ${netProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'}">
+                ${totalRevenue.toFixed(1)} <span class="text-xs font-normal">萬元</span>
+              </div>
+            </div>
+            <div class="text-right">
+              <span class="text-[11px] ${netProfit >= 0 ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' : 'bg-rose-500/20 text-rose-300 border-rose-500/30'} px-2.5 py-1 rounded-full border font-bold">
+                ${netProfit >= 0 ? `獲利 +${netProfit.toFixed(1)}萬 (+${profitRate}%)` : `虧損 ${netProfit.toFixed(1)}萬 (${profitRate}%)`}
+              </span>
+            </div>
+          </div>
+        `;
+
+        grid.appendChild(card);
+      });
+
+      // 檢查是第一回合還是第二回合
+      if (gameState.round === 1) {
+        document.getElementById('nextRoundBtn').classList.remove('hidden');
+        document.getElementById('finalDebriefBtn').classList.add('hidden');
+      } else {
+        document.getElementById('nextRoundBtn').classList.add('hidden');
+        document.getElementById('finalDebriefBtn').classList.remove('hidden');
+      }
+
+      switchStage(3);
+      playSound('fanfare');
+    }
+
+    /* =========================================================
+     *  第二回合過渡：以第一回合收穫作為第二回合新本金
+     * ========================================================= */
+    function prepareRoundTwo() {
+      gameState.round = 2;
+      document.getElementById('currentRoundBadge').innerText = '第二回合 (本金來自第一回合收穫)';
+      document.getElementById('currentRoundBadge').className = 'font-bold text-sky-400 text-base';
+
+      // 設定各組第二回合起始資金 (若不幸全虧破產，發放救濟金 1 萬以繼續學習體驗)
+      gameState.teams.forEach(team => {
+        let newCap = team.round1Harvest;
+        if (newCap <= 0) {
+          newCap = 1.0; // 破產輔導金
+          showToast(`${team.name} 資金全損，政府農損補貼 1 萬元繼續第二回合！`);
+        }
+        team.round2Capital = Math.round(newCap * 10) / 10; // 保留一位小數
+      });
+
+      renderTeams();
+      switchStage(1);
+      playSound('coin');
+      showModal('進入第二回合！', '各組已將「第一回合收穫總金額」轉為第二回合之投資資金！請各小組依據第一回合的經驗，重新思考是否需要調整策略？積極或保守？');
+    }
+
+    /* =========================================================
+     *  階段四：最終排行榜與 4F 教學反思
+     * ========================================================= */
+    function showFinalDebrief() {
+      // 計算各組總成績並排序
+      gameState.teams.forEach(team => {
+        team.totalScore = team.round2Harvest;
+      });
+
+      const sortedTeams = [...gameState.teams].sort((a, b) => b.totalScore - a.totalScore);
+
+      // 頒獎台渲染
+      const podium = document.getElementById('podiumContainer');
+      podium.innerHTML = '';
+
+      if (sortedTeams.length >= 3) {
+        const top3 = [
+          { team: sortedTeams[1], rank: 2, height: 'h-48', color: 'from-slate-400 to-slate-600', medal: '🥈 亞軍' },
+          { team: sortedTeams[0], rank: 1, height: 'h-60', color: 'from-amber-400 to-yellow-600 glow-gold', medal: '🥇 冠軍' },
+          { team: sortedTeams[2], rank: 3, height: 'h-40', color: 'from-amber-700 to-yellow-800', medal: '🥉 季軍' }
+        ];
+
+        top3.forEach(item => {
+          const col = document.createElement('div');
+          col.className = "flex flex-col items-center";
+          col.innerHTML = `
+            <div class="mb-2 text-center">
+              <span class="text-xs font-bold text-slate-300 block">${item.medal}</span>
+              <span class="font-black text-white text-base">${item.team.name}</span>
+              <span class="text-xs text-amber-300 font-bold block">${item.team.totalScore.toFixed(1)} 萬元</span>
+            </div>
+            <div class="w-full ${item.height} bg-gradient-to-t ${item.color} rounded-t-2xl flex items-center justify-center text-4xl font-black text-slate-950/80 shadow-2xl">
+              ${item.rank}
+            </div>
+          `;
+          podium.appendChild(col);
+        });
+      }
+
+      // 排行表
+      const tbody = document.getElementById('finalRankingTableBody');
+      tbody.innerHTML = '';
+
+      sortedTeams.forEach((team, index) => {
+        // 風格判定
+        let styleTag = '<span class="text-xs bg-slate-700 text-slate-300 px-2 py-0.5 rounded">均衡穩健型</span>';
+        if (team.totalScore > 15) {
+          styleTag = '<span class="text-xs bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded font-bold">高回報獲利王</span>';
+        } else if (team.totalScore <= 5) {
+          styleTag = '<span class="text-xs bg-rose-500/20 text-rose-300 border border-rose-500/40 px-2 py-0.5 rounded font-bold">天災重創苦主</span>';
+        }
+
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-800/60 transition";
+        tr.innerHTML = `
+          <td class="p-3 text-center font-bold text-amber-400">#${index + 1}</td>
+          <td class="p-3 font-bold text-white">${team.name}</td>
+          <td class="p-3 text-right text-slate-300">${team.round1Harvest.toFixed(1)} 萬</td>
+          <td class="p-3 text-right text-slate-300">${team.round2Harvest.toFixed(1)} 萬</td>
+          <td class="p-3 text-right font-black text-emerald-400 text-base">${team.totalScore.toFixed(1)} 萬元</td>
+          <td class="p-3 text-center">${styleTag}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      switchStage(4);
+      playSound('fanfare');
+    }
+
+    /* =========================================================
+     *  圓餅圖互動 Modal (依據 Page 3 & 6 繪製學習單圓餅圖)
+     * ========================================================= */
+    function openPieChartModal(teamId) {
+      const team = gameState.teams.find(t => t.id === teamId);
+      if (!team) return;
+
+      const currentCapitalField = gameState.round === 1 ? 'initialCapital' : 'round2Capital';
+      const currentInvestField = gameState.round === 1 ? 'round1Investments' : 'round2Investments';
+      const invest = team[currentInvestField];
+      const maxBudget = team[currentCapitalField];
+
+      const modal = document.getElementById('customModal');
+      const modalTitle = document.getElementById('modalTitle');
+      const modalMessage = document.getElementById('modalMessage');
+
+      modalTitle.innerText = `${team.name} - 資產配置圓餅圖`;
+      modalMessage.innerHTML = `
+        <div class="w-64 h-64 mx-auto my-2 relative">
+          <canvas id="teamPieCanvas"></canvas>
+        </div>
+        <p class="text-xs text-slate-400">對應學習單【第一回合/第二回合栽種計畫書】十等分圓餅圖</p>
+      `;
+
+      modal.classList.remove('hidden');
+
+      // 產生 Chart.js
+      setTimeout(() => {
+        const ctx = document.getElementById('teamPieCanvas').getContext('2d');
+        const labels = [];
+        const data = [];
+        const bgColors = [];
+
+        const colorMap = {
+          beanSprouts: '#22c55e',
+          sweetPotato: '#d97706',
+          strawberry: '#ec4899',
+          rice: '#eab308',
+          scallion: '#a3e635'
+        };
+
+        let allocated = 0;
+        Object.keys(invest).forEach(k => {
+          const cost = invest[k] * CROPS[k].unitCost;
+          if (cost > 0) {
+            labels.push(CROPS[k].name);
+            data.push(cost);
+            bgColors.push(colorMap[k]);
+            allocated += cost;
+          }
+        });
+
+        if (maxBudget > allocated) {
+          labels.push('保留現金');
+          data.push(maxBudget - allocated);
+          bgColors.push('#64748b');
+        }
+
+        if (charts.pie) charts.pie.destroy();
+        charts.pie = new Chart(ctx, {
+          type: 'doughnut',
+          data: {
+            labels: labels,
+            datasets: [{
+              data: data,
+              backgroundColor: bgColors,
+              borderColor: '#1e293b',
+              borderWidth: 2
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: 'bottom',
+                labels: { color: '#e2e8f0', font: { size: 11 } }
+              }
+            }
+          }
+        });
+      }, 50);
+    }
+
+    /* 介面階段切換控制 */
+    function switchStage(stageNum) {
+      for (let i = 1; i <= 4; i++) {
+        const sec = document.getElementById(`stage${i}`);
+        const tab = document.getElementById(`stepIndicator${i}`);
+        if (i === stageNum) {
+          sec.classList.remove('hidden');
+          tab.className = "step-tab flex items-center space-x-2 px-3 py-1.5 rounded-xl transition cursor-pointer bg-emerald-500 text-slate-950 font-bold shadow-md";
+        } else {
+          sec.classList.add('hidden');
+          tab.className = "step-tab flex items-center space-x-2 px-3 py-1.5 rounded-xl transition cursor-pointer text-slate-400 hover:text-slate-200";
+        }
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    /* 全螢幕切換 */
+    function toggleFullScreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen().catch(() => {});
+        }
+      }
+    }
+
+    /* 彈窗與通知系統 (替代 window.alert) */
+    function showModal(title, msg) {
+      document.getElementById('modalTitle').innerText = title;
+      document.getElementById('modalMessage').innerHTML = msg;
+      document.getElementById('customModal').classList.remove('hidden');
+    }
+
+    function closeModal() {
+      document.getElementById('customModal').classList.add('hidden');
+    }
+
+    function showToast(msg) {
+      console.log("[Notice]", msg);
+    }
+
+    function confirmResetGame() {
+      showModal(
+        '確定重新開始遊戲？',
+        `
+          <p class="mb-4">此動作將清除目前所有組別的配置與兩回合紀錄，重置回初始 10 萬元。</p>
+          <div class="flex justify-center space-x-3">
+            <button onclick="closeModal()" class="px-4 py-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-sm font-bold">取消</button>
+            <button onclick="resetGameAction()" class="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-sm font-bold">確認重置</button>
+          </div>
+        `
+      );
+    }
+
+    function resetGameAction() {
+      closeModal();
+      gameState.round = 1;
+      gameState.currentScenario = null;
+      gameState.cardFlipped = false;
+      document.getElementById('currentRoundBadge').innerText = '第一回合 (本金 10 萬)';
+      document.getElementById('currentRoundBadge').className = 'font-bold text-amber-400 text-base';
+      initializeTeams(gameState.teamCount);
+      switchStage(1);
+      playSound('fanfare');
+    }
+
+    // 啟動初始化
+    window.onload = function () {
+      initializeTeams(6);
+    };
+  </script>
+</body>
+</html>
